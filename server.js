@@ -8,7 +8,8 @@ const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
       "http://127.0.0.1:8080",
       "https://glowing-duckanoo-1193ca.netlify.app",
       /\.netlify\.app$/,
-     /\.onrender\.com$/
+     /\.onrender\.com$/,
+    /\.up\.railway\.app$/
     ];
 
 const io = new Server(PORT, {
