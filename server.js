@@ -1,3 +1,4 @@
+
 const { Server } = require("socket.io");
 const http = require("http");
 
@@ -14,6 +15,18 @@ const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
     ];
 
 const server = http.createServer((req, res) => {
+  // Set CORS headers for all requests
+  res.setHeader('Access-Control-Allow-Origin', 'https://glowing-duckanoo-1193ca.netlify.app');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  
+  if (req.method === 'OPTIONS') {
+    res.writeHead(200);
+    res.end();
+    return;
+  }
+  
   if (req.url === '/') {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end('Socket.IO server is running');
@@ -25,10 +38,18 @@ const server = http.createServer((req, res) => {
 
 const io = new Server(server, {
   cors: {
-    origin: ALLOWED_ORIGINS,
-    methods: ["GET", "POST"],
+    origin: [
+      "https://glowing-duckanoo-1193ca.netlify.app",
+      "http://localhost:8080",
+      "http://127.0.0.1:8080",
+      /\.netlify\.app$/,
+      /\.onrender\.com$/
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true
   },
+  allowEIO3: true,
   maxHttpBufferSize: 1e6,
   pingTimeout: 60000,
   pingInterval: 25000,
