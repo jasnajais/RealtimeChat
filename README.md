@@ -15,11 +15,6 @@ A high-performance, real-time communication platform allowing users to seamlessl
 * **Backend:** Node.js, Express
 * **Real-Time Engine:** Socket.io (WebSockets)
 
-## 📸 Interface Preview
-
-![Chat Platform Screenshot](https://githubusercontent.com)
-*(Replace the URL above with the actual path to your chat screenshot image file)*
-
 ## 📦 Installation & Setup
 
 Follow these steps to run the application locally:
