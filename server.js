@@ -1,11 +1,18 @@
+require('dotenv').config();
+const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
+const cors = require('cors');
+const path = require('path');
+const { connectDB, getDbStatus } = require('./backend/config/db');
+const { sendError } = require('./backend/utils/httpResponses');
 
-const { Server } = require("socket.io");
-const http = require("http");
-
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 4000;
 const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS 
   ? process.env.ALLOWED_ORIGINS.split(',') 
   : [
+      "http://localhost:5173",
+      "http://127.0.0.1:5173",
       "http://localhost:8080", 
       "http://127.0.0.1:8080",
       "https://glowing-duckanoo-1193ca.netlify.app",
@@ -14,37 +21,81 @@ const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
       /\.up\.railway\.app$/
     ];
 
-const server = http.createServer((req, res) => {
-  // Set CORS headers for all requests
-  res.setHeader('Access-Control-Allow-Origin', 'https://glowing-duckanoo-1193ca.netlify.app');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  
-  if (req.method === 'OPTIONS') {
-    res.writeHead(200);
-    res.end();
-    return;
-  }
-  
-  if (req.url === '/') {
-    res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('Socket.IO server is running');
-  } else {
-    res.writeHead(404, { 'Content-Type': 'text/plain' });
-    res.end('Not Found');
-  }
+function isOriginAllowed(origin) {
+  if (!origin) return true;
+
+  return ALLOWED_ORIGINS.some((allowed) => {
+    if (allowed instanceof RegExp) {
+      return allowed.test(origin);
+    }
+    return allowed === origin;
+  });
+}
+
+// Initialize Express App
+const app = express();
+const server = http.createServer(app);
+
+// CORS Middlewares
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (isOriginAllowed(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Blocked by CORS policy'));
+    }
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+};
+
+app.use(cors(corsOptions));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// API REST Routes
+app.use('/api/auth', require('./backend/routes/auth'));
+app.use('/api/stats', require('./backend/routes/stats'));
+app.use('/api/mod', require('./backend/routes/mod'));
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.status(200).json({
+    status: 'online',
+    database: getDbStatus() ? 'mongodb' : 'in-memory-fallback',
+    timestamp: new Date().toISOString()
+  });
 });
 
+// Serve frontend assets in production build
+const clientBuildPath = path.join(__dirname, 'client', 'dist');
+app.use(express.static(clientBuildPath));
+
+app.use((req, res, next) => {
+  // If request hits API route that doesn't exist, return 404
+  if (req.path.startsWith('/api/')) {
+    return sendError(res, 404, 'API route not found.');
+  }
+  // Otherwise, serve index.html for React routing
+  res.sendFile(path.join(clientBuildPath, 'index.html'), (err) => {
+    if (err) {
+      res.writeHead(200, { 'Content-Type': 'text/plain' });
+      res.end('Vite frontend build is missing. Run npm run build in /client.');
+    }
+  });
+});
+
+// Setup Socket.IO Server
 const io = new Server(server, {
   cors: {
-    origin: [
-      "https://glowing-duckanoo-1193ca.netlify.app",
-      "http://localhost:8080",
-      "http://127.0.0.1:8080",
-      /\.netlify\.app$/,
-      /\.onrender\.com$/
-    ],
+    origin: (origin, callback) => {
+      if (isOriginAllowed(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Blocked by CORS policy'));
+      }
+    },
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true
@@ -56,134 +107,14 @@ const io = new Server(server, {
   compression: true
 });
 
-const rateLimitMap = new Map();
-const RATE_LIMIT_WINDOW = 1000;
-const RATE_LIMIT_MAX = 10;
+// Link global reference for sockets
+global.ioPointer = io;
 
-function checkRateLimit(socketId) {
-  const now = Date.now();
-  const userLimits = rateLimitMap.get(socketId) || { count: 0, resetTime: now + RATE_LIMIT_WINDOW };
-  
-  if (now > userLimits.resetTime) {
-    userLimits.count = 1;
-    userLimits.resetTime = now + RATE_LIMIT_WINDOW;
-  } else {
-    userLimits.count++;
-  }
-  
-  rateLimitMap.set(socketId, userLimits);
-  return userLimits.count <= RATE_LIMIT_MAX;
-}
+// Import & bind Socket.IO routes
+const { handleSocket } = require('./backend/sockets/chatSocket');
+handleSocket(io);
 
-let connectionCount = 0;
-const activeUsers = new Set();
-
-io.on("connection", (socket) => {
-  connectionCount++;
-  activeUsers.add(socket.id);
-  
-  console.log(`🟢 New connection established`);
-  console.log(`   ├─ Socket ID: ${socket.id}`);
-  console.log(`   ├─ IP Address: ${socket.handshake.address}`);
-  console.log(`   └─ Active connections: ${connectionCount}`);
-  
-  socket.emit("connection-status", {
-    status: "connected",
-    message: "Welcome! You're successfully connected to the server.",
-    timestamp: new Date().toISOString(),
-    activeUsers: activeUsers.size
-  });
-  
-  socket.broadcast.emit("user-joined", {
-    message: "A new user joined the chat",
-    activeUsers: activeUsers.size,
-    timestamp: new Date().toISOString()
-  });
-
-  socket.on("send-message", (data) => {
-    try {
-      if (!checkRateLimit(socket.id)) {
-        socket.emit("error", { message: "Rate limit exceeded. Please slow down." });
-        return;
-      }
-      
-      if (!data || typeof data !== 'object') {
-        socket.emit("error", { message: "Invalid message format" });
-        return;
-      }
-      
-      const { message, username } = data;
-      
-      if (!message || typeof message !== 'string' || message.trim().length === 0) {
-        socket.emit("error", { message: "Message cannot be empty" });
-        return;
-      }
-      
-      const sanitizedMessage = message
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .trim()
-        .substring(0, 1000);
-      
-      const messageData = {
-        message: sanitizedMessage,
-        username: username || "Anonymous",
-        timestamp: new Date().toISOString(),
-        senderId: socket.id
-      };
-      
-      console.log(`📨 Message from ${messageData.username} (${socket.id}): ${sanitizedMessage}`);
-      
-      socket.broadcast.emit("receive-message", messageData);
-      
-      socket.emit("message-sent", {
-        status: "delivered",
-        timestamp: messageData.timestamp
-      });
-      
-    } catch (error) {
-      console.error(`❌ Error handling message from ${socket.id}:`, error);
-      socket.emit("error", { message: "Failed to process message" });
-    }
-  });
-  
-  socket.on("typing", (data) => {
-    socket.broadcast.emit("user-typing", {
-      username: data.username || "Someone",
-      isTyping: data.isTyping,
-      timestamp: new Date().toISOString()
-    });
-  });
-  
-  socket.on("disconnect", (reason) => {
-    connectionCount--;
-    activeUsers.delete(socket.id);
-    rateLimitMap.delete(socket.id);
-    
-    console.log(`🔴 User disconnected`);
-    console.log(`   ├─ Socket ID: ${socket.id}`);
-    console.log(`   ├─ Reason: ${reason}`);
-    console.log(`   └─ Remaining connections: ${connectionCount}`);
-    
-    socket.broadcast.emit("user-left", {
-      message: "A user left the chat",
-      activeUsers: activeUsers.size,
-      timestamp: new Date().toISOString()
-    });
-  });
-  
-  socket.on("error", (error) => {
-    console.error(`❌ Socket error for ${socket.id}:`, error);
-  });
-});
-
-io.engine.on("connection_error", (err) => {
-  console.error("❌ Connection error:", err.req);
-  console.error("   Error code:", err.code);
-  console.error("   Error message:", err.message);
-  console.error("   Error context:", err.context);
-});
-
+// Graceful shut down
 process.on('SIGINT', () => {
   console.log('\n🛑 Shutting down server gracefully...');
   
@@ -195,16 +126,43 @@ process.on('SIGINT', () => {
   setTimeout(() => {
     io.close(() => {
       console.log('✅ Socket.IO server closed');
-      process.exit(0);
+      const mongoose = require('mongoose');
+      if (mongoose.connection.readyState !== 0) {
+        mongoose.connection.close().then(() => {
+          console.log('✅ Mongoose connection closed');
+          process.exit(0);
+        });
+      } else {
+        process.exit(0);
+      }
     });
   }, 1000);
 });
 
-server.listen(PORT, () => {
-  console.log('🚀 Socket.IO Server Starting...');
-  console.log(`   ├─ Port: ${PORT}`);
-  console.log(`   ├─ Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`   ├─ Allowed Origins: ${ALLOWED_ORIGINS.join(', ')}`);
-  console.log(`   └─ Server ready at http://localhost:${PORT}`);
-  console.log('📡 Waiting for connections...\n');
+// Connect to Database (Mongoose / In-Memory Fallback), then start server
+async function startServer() {
+  await connectDB();
+
+  server.on('error', (error) => {
+    if (error.code === 'EADDRINUSE') {
+      console.error(`❌ Port ${PORT} is already in use. Stop the other process or set PORT in .env.`);
+      console.error(`   Windows: netstat -ano | findstr :${PORT}`);
+      console.error(`   Then:    taskkill /PID <pid> /F`);
+    } else {
+      console.error('❌ Server failed to start:', error.message);
+    }
+    process.exit(1);
+  });
+
+  server.listen(PORT, () => {
+    console.log('🚀 [Server] Socket.IO & Express Starting...');
+    console.log(`   ├─ Port: ${PORT}`);
+    console.log(`   ├─ Database Status: ${getDbStatus() ? 'MongoDB' : 'In-Memory fallback'}`);
+    console.log(`   └─ Listening at http://localhost:${PORT}`);
+  });
+}
+
+startServer().catch((error) => {
+  console.error('Failed to start server:', error);
+  process.exit(1);
 });
