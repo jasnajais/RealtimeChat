@@ -16,6 +16,7 @@ const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
       "http://localhost:8080", 
       "http://127.0.0.1:8080",
       "https://glowing-duckanoo-1193ca.netlify.app",
+    "https://realtimechat-kz1j.onrender.com",
       /\.netlify\.app$/,
       /\.vercel\.app$/,
       /\.onrender\.com$/,
