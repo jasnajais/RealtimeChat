@@ -1,0 +1,17 @@
+# Deploy the Node/Socket.IO backend on Render (free tier works).
+# Vercel hosts the React frontend only — it cannot run WebSockets.
+services:
+  - type: web
+    name: realtimechat-api
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ALLOWED_ORIGINS
+        sync: false
