@@ -75,7 +75,7 @@ router.post('/unban', authMiddleware, requireAdmin, async (req, res) => {
       { username },
       { $set: { isBanned: false } }
     );
-    
+          
     if (!userObj) {
       return sendError(res, 404, 'User not found.');
     }
@@ -97,3 +97,14 @@ router.get('/users', authMiddleware, requireAdmin, async (req, res) => {
 });
 
 module.exports = router;
+
+
+
+
+
+
+
+
+
+
+

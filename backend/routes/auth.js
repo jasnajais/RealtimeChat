@@ -7,7 +7,6 @@ const { generateTempUsername } = require('../utils/usernames');
 const { updateDailyStreak, getUtcDayKey } = require('../utils/gamification');
 
 const router = express.Router();
-
 router.post('/register', async (req, res) => {
   try {
     let { username, adminCode } = req.body;
