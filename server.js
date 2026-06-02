@@ -91,13 +91,11 @@ app.use((req, res, next) => {
 // Setup Socket.IO Server
 const io = new Server(server, {
   cors: {
-    origin: (origin, callback) => {
-      if (isOriginAllowed(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error('Blocked by CORS policy'));
-      }
-    },
+    origin: "https://realtime-chat-w7a3.vercel.app",
+    methods: ["GET", "POST"],
+    credentials: true
+  }
+});
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true
