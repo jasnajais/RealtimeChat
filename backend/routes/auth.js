@@ -63,7 +63,7 @@ router.post('/register', async (req, res) => {
     if (adminCode === 'neonadmin1337' || adminCode === 'admin') {
       role = 'admin';
     }
-
+//virtual development sytem
     // Create new profile record
     const newUser = await User.create({
       username: chosenUsername,
@@ -74,6 +74,7 @@ router.post('/register', async (req, res) => {
       streakLastDate: getUtcDayKey(),
       badges: ['Newcomer']
     });
+    //
 
     const token = jwt.sign({ username: newUser.username, role: newUser.role }, JWT_SECRET);
 
@@ -95,3 +96,4 @@ router.post('/register', async (req, res) => {
 });
 
 module.exports = router;
+
