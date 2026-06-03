@@ -368,17 +368,20 @@ function MatchPage({
             <div className="relative">
               <input 
                 type="text" 
-                required={!isRandomMode}
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full bg-slate-950/80 border border-slate-850 rounded-2xl pl-4 pr-12 py-4 text-white text-base font-semibold focus:outline-none focus:border-[#bc34fa] focus:ring-2 focus:ring-[#bc34fa]/10 transition-all placeholder-slate-700"
                 placeholder="e.g. NeonGhost492"
                 maxLength={25}
+                autoComplete="off"
               />
               <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-600 font-mono text-[10px] tracking-widest">
                 {username.length}/25
               </span>
             </div>
+            <p className="text-[10px] uppercase tracking-widest text-slate-600 font-mono">
+              Leave it blank and we will generate a temporary name for you.
+            </p>
           </div>
 
           {!isRandomMode && !reconnectTarget && (
