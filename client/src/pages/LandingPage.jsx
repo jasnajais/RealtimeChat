@@ -1,27 +1,15 @@
-import { Bell, MessageCircle, Repeat2, Users, Sparkles, Award, ShieldAlert, Zap, Shuffle } from 'lucide-react';
+import { Bell, MessageCircle, Users, Sparkles, Award, ShieldAlert, Zap, Shuffle } from 'lucide-react';
 import SoundManager from '../components/SoundManager';
 
 function LandingPage({
   onlineCount = 0,
   onViewChange,
-  onStartMatch,
   onRandomChat,
   role = 'user',
-  previousStranger = '',
-  onReconnectPrevious,
   liveUsers = { count: 0, users: [] },
   onEnableNotifications,
   notificationsEnabled = false
 }) {
-  const handleStart = () => {
-    SoundManager.playClick();
-    if (onStartMatch) {
-      onStartMatch();
-    } else {
-      onViewChange('match');
-    }
-  };
-
   const handleRandomChat = () => {
     SoundManager.playClick();
     if (onRandomChat) {
@@ -39,12 +27,6 @@ function LandingPage({
   const handleLeaderboard = () => {
     SoundManager.playClick();
     onViewChange('leaderboard');
-  };
-
-  const handleReconnect = () => {
-    if (!previousStranger) return;
-    SoundManager.playClick();
-    onReconnectPrevious?.();
   };
 
   const handleEnableNotifications = () => {
@@ -98,16 +80,16 @@ function LandingPage({
       <main className="max-w-4xl w-full mx-auto flex flex-col items-center text-center sm:my-6 md:my-10 z-10">
         <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900 border border-slate-800 text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-6 float-slow">
           <Sparkles size={12} className="text-[#00f2fe]" />
-          Level Up Your Chats
+          Random chat only
         </div>
 
         <h1 className="text-3xl sm:text-4xl md:text-7xl font-black text-white tracking-tighter mb-4 uppercase leading-tight sm:leading-none font-orbitron">
           Anonymous <br />
-          Stranger <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#bc34fa] via-[#ff007f] to-[#00f2fe] neon-text-purple">Matching</span>
+          Stranger <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#bc34fa] via-[#ff007f] to-[#00f2fe] neon-text-purple">Random Chat</span>
         </h1>
 
         <p className="text-slate-400 max-w-xl text-sm md:text-base leading-relaxed mb-8">
-          Match with strangers globally based on shared moods and interests. Play built-in Truth or Dare games, level up your XP, and earn badging credentials!
+          Jump into a live stranger chat in one tap. There are no mood filters, no interest setup, and no extra game modes to manage.
         </p>
 
         <div className="grid grid-cols-2 gap-3 sm:gap-4 max-w-md w-full mb-8 sm:mb-10">
@@ -171,35 +153,16 @@ function LandingPage({
           </button>
         </div>
 
-        {previousStranger && (
-          <button
-            type="button"
-            onClick={handleReconnect}
-            className="mb-10 inline-flex items-center gap-2 rounded-2xl border border-[#00f2fe]/25 bg-[#00f2fe]/5 px-5 py-3 text-xs font-bold uppercase tracking-widest text-[#00f2fe] transition-all hover:border-[#00f2fe]"
-          >
-            <Repeat2 size={14} />
-            Reconnect with {previousStranger}
-          </button>
-        )}
-
         <div className="flex flex-col gap-3 w-full max-w-lg">
           <button
             onClick={handleRandomChat}
             className="w-full px-8 py-4.5 rounded-2xl bg-gradient-to-r from-[#00f2fe] to-[#bc34fa] hover:from-[#33f5ff] hover:to-[#d546ff] text-slate-950 font-bold tracking-widest font-orbitron uppercase text-sm shadow-[0_0_25px_rgba(0,242,254,0.25)] hover:shadow-[0_0_35px_rgba(0,242,254,0.4)] active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2"
           >
             <Shuffle size={18} />
-            Random Chat — Anyone Online
+            Random Chat
           </button>
 
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full">
-            <button
-              onClick={handleStart}
-              className="flex-1 px-6 py-4 rounded-2xl bg-gradient-to-r from-[#bc34fa] to-[#ff007f] hover:from-[#d546ff] hover:to-[#ff2396] text-white font-bold tracking-widest font-orbitron uppercase text-xs sm:text-sm shadow-[0_0_25px_rgba(188,52,250,0.3)] hover:shadow-[0_0_35px_rgba(188,52,250,0.5)] active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2"
-            >
-              <Zap size={18} />
-              Smart Match
-            </button>
-
             <button
               onClick={handleGroupStart}
               className="flex-1 px-6 py-4 rounded-2xl bg-slate-900 hover:bg-slate-850 text-white font-bold tracking-widest font-orbitron uppercase text-xs sm:text-sm border border-slate-800 hover:border-slate-700 hover:shadow-[0_0_25px_rgba(255,255,255,0.05)] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
@@ -211,8 +174,8 @@ function LandingPage({
         </div>
 
         <p className="mt-4 max-w-md text-[11px] text-slate-500 leading-relaxed">
-          <span className="text-[#00f2fe] font-semibold">Random Chat</span> pairs you instantly with whoever is waiting — no mood or interest filters.
-          <span className="text-[#bc34fa] font-semibold"> Smart Match</span> uses your preferences for a better fit.
+          <span className="text-[#00f2fe] font-semibold">Random Chat</span> connects you instantly with whoever is waiting.
+          Keep it anonymous, respectful, and fast.
         </p>
       </main>
 
@@ -223,17 +186,17 @@ function LandingPage({
           </div>
           <h3 className="text-base font-bold text-white font-orbitron mb-2 uppercase tracking-wide">Earn Badges & XP</h3>
           <p className="text-xs text-slate-400 leading-relaxed">
-            Gain XP for sending messages and completing dares. Level up to unlock badging titles like Dare Devil and Chaos King.
+            Gain XP for sending messages and staying active. Level up to unlock badges and profile rewards.
           </p>
         </div>
 
         <div className="bg-slate-900/40 backdrop-blur-md border border-slate-850/60 rounded-2xl p-5 hover:border-[#00f2fe]/30 transition-colors">
           <div className="p-2 bg-[#00f2fe]/10 border border-[#00f2fe]/20 rounded-xl w-max mb-4">
-            <Zap size={20} className="text-[#00f2fe]" />
+            <Shuffle size={20} className="text-[#00f2fe]" />
           </div>
-          <h3 className="text-base font-bold text-white font-orbitron mb-2 uppercase tracking-wide">Truth or Dare Modes</h3>
+          <h3 className="text-base font-bold text-white font-orbitron mb-2 uppercase tracking-wide">Instant Random Pairing</h3>
           <p className="text-xs text-slate-400 leading-relaxed">
-            Stuck on what to say? Trigger our funny, flirty, or chaotic Truth or Dare challenges during 1v1 sessions or group wheel games.
+            Jump straight into a live stranger chat with no setup, no filters, and no game mode switching.
           </p>
         </div>
 

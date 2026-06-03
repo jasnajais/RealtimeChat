@@ -1,9 +1,7 @@
-import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Send,
-  Zap,
   Sparkles,
-  HelpCircle,
   Flag,
   CheckCircle,
   Flame,
@@ -14,13 +12,14 @@ import {
   Smile,
   Image,
   Copy,
-  X
+  X,
+  Zap
 } from 'lucide-react';
 import SoundManager from '../components/SoundManager';
 import { generateIcebreaker } from '../components/Icebreakers';
 
 const EMPTY_INTERESTS = [];
-const QUICK_REACTIONS = ['😂', '🔥', '💜', '👏', '😮'];
+const QUICK_REACTIONS = ['😂', '🔥', '❤️', '👏', '😮'];
 
 function ChatPage({
   socket,
@@ -35,10 +34,8 @@ function ChatPage({
     strangerName,
     roomId,
     commonInterests: matchedInterests = EMPTY_INTERESTS,
-    strangerMood = 'chill',
-    matchMode = 'smart'
+    strangerMood = 'chill'
   } = matchDetails;
-  const isRandomMatch = matchMode === 'random';
 
   const commonInterests = Array.isArray(matchedInterests) ? matchedInterests : EMPTY_INTERESTS;
 
@@ -47,9 +44,6 @@ function ChatPage({
   const [isStrangerTyping, setIsStrangerTyping] = useState(false);
   const [isTypingSelf, setIsTypingSelf] = useState(false);
   const [manualIcebreaker, setManualIcebreaker] = useState(null);
-  const [showGame, setShowGame] = useState(false);
-  const [selectedGameMode, setSelectedGameMode] = useState('funny');
-  const [currentPrompt, setCurrentPrompt] = useState(null);
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportReason, setReportReason] = useState('Spam');
   const [reportSubmitted, setReportSubmitted] = useState(false);
@@ -156,23 +150,6 @@ function ChatPage({
     onSkip();
   };
 
-  const handleTriggerPrompt = (type) => {
-    SoundManager.playClick();
-    if (socket) {
-      socket.emit('trigger-truth-or-dare', {
-        roomId,
-        mode: selectedGameMode,
-        type
-      });
-    }
-  };
-
-  const handleCompletePrompt = () => {
-    SoundManager.playClick();
-    if (socket) socket.emit('complete-truth-dare', { roomId });
-    setCurrentPrompt(null);
-  };
-
   const handleSubmitReport = () => {
     SoundManager.playClick();
     if (!socket) return;
@@ -266,13 +243,6 @@ function ChatPage({
     socket.on('match-ended', (data) => {
       handleSessionExit(data?.message || data?.reason || 'This chat session ended.');
     });
-    socket.on('truth-or-dare-prompt', (data) => {
-      SoundManager.playMsg();
-      setCurrentPrompt(data);
-    });
-    socket.on('truth-dare-completed-notice', (data) => {
-      setMessages((prev) => [...prev, { type: 'system', message: data.message }]);
-    });
     socket.on('message-reaction', handleReaction);
     socket.on('level-up', (data) => {
       SoundManager.playLevelUp();
@@ -299,8 +269,6 @@ function ChatPage({
       socket.off('blocked-by-user');
       socket.off('session-timeout');
       socket.off('match-ended');
-      socket.off('truth-or-dare-prompt');
-      socket.off('truth-dare-completed-notice');
       socket.off('message-reaction', handleReaction);
       socket.off('level-up');
       if (safetyNoticeTimeoutRef.current) clearTimeout(safetyNoticeTimeoutRef.current);
@@ -400,15 +368,9 @@ function ChatPage({
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 min-w-0">
                 <span className="truncate text-sm font-bold text-white font-orbitron tracking-wide">{strangerName}</span>
-                {isRandomMatch ? (
-                  <span className="shrink-0 text-[10px] py-0.5 px-2 bg-[#00f2fe]/10 border border-[#00f2fe]/20 text-[#00f2fe] rounded-full uppercase font-bold font-orbitron tracking-widest">
-                    Random
-                  </span>
-                ) : (
-                  <span className="shrink-0 text-[10px] py-0.5 px-2 bg-purple-500/10 border border-purple-500/20 text-[#bc34fa] rounded-full uppercase font-bold font-orbitron tracking-widest">
-                    {strangerMood}
-                  </span>
-                )}
+                <span className="shrink-0 text-[10px] py-0.5 px-2 bg-[#00f2fe]/10 border border-[#00f2fe]/20 text-[#00f2fe] rounded-full uppercase font-bold font-orbitron tracking-widest">
+                  Random
+                </span>
               </div>
               {commonInterests.length > 0 ? (
                 <span className="block truncate text-[9px] text-slate-500 uppercase tracking-widest font-mono">Interests: {commonInterests.join(', ')}</span>
@@ -429,18 +391,6 @@ function ChatPage({
               title="Enable Push Notifications"
             >
               <Bell size={15} />
-            </button>
-
-            <button
-              onClick={() => { SoundManager.playClick(); setShowGame((prev) => !prev); }}
-              className={`touch-target shrink-0 p-2.5 rounded-xl border text-xs font-bold font-orbitron uppercase tracking-widest flex items-center gap-1.5 transition-all ${
-                showGame
-                  ? 'bg-gradient-to-r from-[#bc34fa] to-[#ff007f] text-white border-transparent'
-                  : 'bg-slate-950 border-slate-850 text-slate-400 hover:text-white'
-              }`}
-            >
-              <HelpCircle size={15} />
-              <span className="hidden sm:inline">Truth/Dare</span>
             </button>
 
             <button
@@ -610,35 +560,6 @@ function ChatPage({
           <div ref={messagesEndRef} />
         </div>
 
-        {currentPrompt && (
-          <div className="absolute inset-x-3 sm:inset-x-4 bottom-20 sm:bottom-24 z-30 max-w-lg mx-auto bg-slate-900 border border-purple-500/30 rounded-2xl p-4 sm:p-5 shadow-2xl animate-bounce [animation-iteration-count:1] [animation-duration:1s]">
-            <div className="flex items-center gap-2 mb-2">
-              <span className={`text-[10px] font-black uppercase tracking-widest py-0.5 px-2 rounded-full font-orbitron ${
-                currentPrompt.type === 'truth' ? 'bg-[#00f2fe]/10 text-[#00f2fe]' : 'bg-[#ff007f]/10 text-[#ff007f]'
-              }`}>
-                {currentPrompt.type} Challenge
-              </span>
-              <span className="text-[9px] text-slate-500 uppercase tracking-widest font-mono">Mode: {currentPrompt.mode}</span>
-            </div>
-
-            <p className="text-sm font-semibold text-white mb-4">
-              <strong className="text-slate-400">{currentPrompt.asker}</strong> asks: "{currentPrompt.prompt}"
-            </p>
-
-            {currentPrompt.asker !== username ? (
-              <button
-                onClick={handleCompletePrompt}
-                className="w-full py-2.5 bg-gradient-to-r from-[#bc34fa] to-[#ff007f] hover:from-[#d546ff] hover:to-[#ff2396] text-white text-xs font-bold uppercase tracking-widest font-orbitron rounded-xl shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-1"
-              >
-                <CheckCircle size={14} />
-                I Answered / Completed (+15 XP)
-              </button>
-            ) : (
-              <p className="text-[10px] text-slate-500 font-mono italic">Waiting for stranger to complete the challenge...</p>
-            )}
-          </div>
-        )}
-
         <div className="shrink-0 p-3 sm:p-4 bg-slate-900 border-t border-slate-850 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <div className="h-5 -mt-3.5 mb-1 px-1 flex items-center text-[10px] text-[#bc34fa]/80 font-mono">
             {isStrangerTyping && (
@@ -731,83 +652,6 @@ function ChatPage({
           </div>
         </div>
       </div>
-
-      {showGame && (
-        <>
-          <button
-            type="button"
-            aria-label="Close Truth or Dare panel"
-            className="fixed inset-0 z-30 bg-black/60 md:hidden"
-            onClick={() => setShowGame(false)}
-          />
-          <div className="fixed inset-x-0 bottom-0 z-40 max-h-[88dvh] w-full overflow-y-auto rounded-t-3xl border-t border-slate-850 bg-slate-900/95 backdrop-blur-xl p-4 sm:p-5 md:static md:inset-auto md:z-20 md:max-h-none md:w-80 md:shrink-0 md:rounded-none md:border-l md:border-t-0 md:h-full md:flex md:flex-col md:justify-between">
-          <div className="space-y-6">
-            <div className="flex items-center justify-between border-b border-slate-850 pb-3">
-              <h3 className="text-sm font-black text-white font-orbitron uppercase tracking-widest flex items-center gap-1.5">
-                <Sparkles size={16} className="text-[#bc34fa] animate-pulse" />
-                Truth / Dare
-              </h3>
-              <button
-                onClick={() => setShowGame(false)}
-                className="text-xs text-slate-500 hover:text-white uppercase font-mono tracking-wider"
-              >
-                Hide
-              </button>
-            </div>
-
-            <div className="space-y-2">
-              <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500 block">Game Mode</span>
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  { id: 'funny', label: 'Funny 🤪' },
-                  { id: 'chaos', label: 'Chaos ⚡' },
-                  { id: 'friendship', label: 'Friends 🤝' },
-                  { id: 'flirty', label: 'Flirty 😘' },
-                  { id: 'latenight', label: 'Midnight 🌙' }
-                ].map((mode) => (
-                  <button
-                    key={mode.id}
-                    onClick={() => setSelectedGameMode(mode.id)}
-                    className={`py-2 px-2.5 rounded-xl border text-[10px] font-bold font-orbitron uppercase tracking-wide text-left transition-all ${
-                      selectedGameMode === mode.id
-                        ? 'bg-purple-500/10 border-purple-500 text-white shadow-sm'
-                        : 'bg-slate-950 border-slate-850 text-slate-400 hover:text-slate-200'
-                    }`}
-                  >
-                    {mode.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-3 pt-4 border-t border-slate-800/80">
-              <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500 block">Trigger Challenge</span>
-              <div className="space-y-2">
-                <button
-                  onClick={() => handleTriggerPrompt('truth')}
-                  className="w-full py-3.5 bg-[#00f2fe]/10 border border-[#00f2fe]/30 hover:bg-[#00f2fe] hover:text-slate-950 text-[#00f2fe] font-bold font-orbitron uppercase tracking-widest text-xs rounded-xl transition-all shadow-[0_0_15px_rgba(0,242,254,0.05)] active:scale-[0.98]"
-                >
-                  Prompt TRUTH
-                </button>
-                <button
-                  onClick={() => handleTriggerPrompt('dare')}
-                  className="w-full py-3.5 bg-[#ff007f]/10 border border-[#ff007f]/30 hover:bg-[#ff007f] hover:text-white text-[#ff007f] font-bold font-orbitron uppercase tracking-widest text-xs rounded-xl transition-all shadow-[0_0_15px_rgba(255,0,127,0.05)] active:scale-[0.98]"
-                >
-                  Prompt DARE
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-slate-950/40 border border-slate-850 p-3 rounded-xl text-center space-y-1">
-            <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest block font-mono">Gamified rewards</span>
-            <p className="text-[10px] text-slate-400 leading-normal">
-              Answering a Truth/Dare awards you <strong className="text-white">+15 XP</strong> and increases level rankings!
-            </p>
-          </div>
-        </div>
-        </>
-      )}
     </div>
   );
 }

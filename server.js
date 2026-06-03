@@ -67,6 +67,7 @@ app.get('/api/health', (req, res) => {
     status: 'online',
     database: getDbStatus() ? 'mongodb' : 'in-memory-fallback',
     timestamp: new Date().toISOString()
+  
   });
 });
 
@@ -88,18 +89,10 @@ app.use((req, res, next) => {
   });
 });
 
+
 // Setup Socket.IO Server
 const io = new Server(server, {
-  cors: {
-    origin: "https://realtime-chat-w7a3.vercel.app",
-    methods: ["GET", "POST"],
-    credentials: true
-  }
-});
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true
-  },
+  cors: corsOptions,
   allowEIO3: true,
   maxHttpBufferSize: 1e6,
   pingTimeout: 60000,

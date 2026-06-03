@@ -10,7 +10,6 @@ import AdminDashboardPage from './pages/AdminDashboardPage';
 
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_URL || 'http://localhost:4000';
 const socket = io(SOCKET_URL, { autoConnect: false });
-const PREVIOUS_STRANGER_KEY = 'neon_previous_stranger';
 
 function getStoredRole() {
   const storedRole = localStorage.getItem('neon_role');
@@ -39,10 +38,6 @@ function App() {
   const [role] = useState(() => getStoredRole());
   const [matchDetails, setMatchDetails] = useState(null);
   const [notice, setNotice] = useState('');
-  const [previousStranger, setPreviousStranger] = useState(() => localStorage.getItem(PREVIOUS_STRANGER_KEY) || '');
-  const [reconnectTarget, setReconnectTarget] = useState('');
-  const [matchMode, setMatchMode] = useState('smart');
-  const [autoStartRandom, setAutoStartRandom] = useState(false);
   const [liveUsers, setLiveUsers] = useState({ count: 0, users: [] });
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => typeof Notification !== 'undefined' && Notification.permission === 'granted');
 
@@ -86,47 +81,22 @@ function App() {
 
   const handleMatched = useCallback((details) => {
     setMatchDetails(details);
-    setPreviousStranger(details?.strangerName || '');
-    if (details?.strangerName) {
-      localStorage.setItem(PREVIOUS_STRANGER_KEY, details.strangerName);
-    }
-    setReconnectTarget('');
     setView('chat');
     notifyUser('Matched', `You matched with ${details?.strangerName || 'someone'}.`);
   }, [notifyUser]);
 
   const handleSkip = useCallback(() => {
     setMatchDetails(null);
-    setAutoStartRandom(matchMode === 'random');
     setView('match');
-  }, [matchMode]);
+  }, []);
 
   const handleViewChange = useCallback((nextView) => {
-    if (nextView !== 'match') {
-      setAutoStartRandom(false);
-    }
     setView(nextView);
   }, []);
 
-  const handleStartMatch = useCallback(() => {
-    setMatchMode('smart');
-    setReconnectTarget('');
-    setAutoStartRandom(false);
-    setView('match');
-  }, []);
-
   const handleRandomChat = useCallback(() => {
-    setMatchMode('random');
-    setReconnectTarget('');
-    setAutoStartRandom(true);
     setView('match');
   }, []);
-
-  const handleReconnectPrevious = useCallback(() => {
-    if (!previousStranger) return;
-    setReconnectTarget(previousStranger);
-    setView('match');
-  }, [previousStranger]);
 
   const handleEnableNotifications = useCallback(async () => {
     if (typeof Notification === 'undefined') {
@@ -149,11 +119,6 @@ function App() {
         setUsername={setUsername}
         onMatched={handleMatched}
         onViewChange={handleViewChange}
-        reconnectTarget={reconnectTarget}
-        matchMode={matchMode}
-        onMatchModeChange={setMatchMode}
-        autoStartRandom={autoStartRandom}
-        onAutoStartConsumed={() => setAutoStartRandom(false)}
         onNotify={notifyUser}
       />
     );
@@ -207,11 +172,8 @@ function App() {
       <LandingPage
         onlineCount={onlineCount}
         onViewChange={handleViewChange}
-        onStartMatch={handleStartMatch}
         onRandomChat={handleRandomChat}
         role={role}
-        previousStranger={previousStranger}
-        onReconnectPrevious={handleReconnectPrevious}
         liveUsers={liveUsers}
         onEnableNotifications={handleEnableNotifications}
         notificationsEnabled={notificationsEnabled}

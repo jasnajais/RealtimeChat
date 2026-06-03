@@ -20,90 +20,6 @@ const QUEUE_INACTIVITY_TIMEOUT_MS = Number(process.env.MATCH_QUEUE_TIMEOUT_MS ||
 const TOXICITY_STRIKE_THRESHOLD = Number(process.env.TOXICITY_STRIKE_THRESHOLD || 3);
 const MODERATION_STRIKE_BAN_THRESHOLD = Number(process.env.MODERATION_STRIKE_BAN_THRESHOLD || 5);
 
-// Dynamic Truth & Dare Questions Bank
-const TRUTH_DARE_BANK = {
-  funny: {
-    truths: [
-      "What is the most embarrassing thing you've done in public?",
-      "Have you ever walked into a glass door? Describe the moment.",
-      "If you could only eat one food for the rest of your life, what would it be?",
-      "What is the weirdest search query in your browser history?",
-      "Have you ever pretended to recognize someone when you had no idea who they were?"
-    ],
-    dares: [
-      "Type the next 3 messages using a pirate accent (e.g. Ahoy, matey!).",
-      "Text your best friend that you just saw a green alien flying outside.",
-      "Send the stranger your most hilarious pickup line.",
-      "Close your eyes and type a 10-word message, then send it without correcting typos.",
-      "Act like a hyperactive sportscaster for the next 2 minutes of chat."
-    ]
-  },
-  chaos: {
-    truths: [
-      "What is a lie you told that you still feel guilty about?",
-      "Have you ever snooped through someone else's phone or belongings?",
-      "What is the most rebellious thing you've ever done?",
-      "If you could swap lives with any celebrity for 24 hours, who would it be?",
-      "What is a secret you've never shared with your best friend?"
-    ],
-    dares: [
-      "Change your chat text color to red and type in all caps for 5 messages.",
-      "Reveal the last photo in your phone's photo library (describe it in detail).",
-      "Confess your most controversial opinion right now.",
-      "Ask the stranger to give you any dare and promise to type 'Yes Master' in response.",
-      "Text a random contact 'I know what you did' and describe their reaction."
-    ]
-  },
-  friendship: {
-    truths: [
-      "What is the qualities you value most in a true friend?",
-      "What is your biggest dream or aspiration in life?",
-      "What was your first impression of this chat room?",
-      "What is a hobby or interest you have that most people don't know about?",
-      "If you could travel anywhere in the world right now, where would you go?"
-    ],
-    dares: [
-      "Give the stranger a genuine, deep compliment.",
-      "Recommend a movie, book, or song that changed your perspective.",
-      "Share a funny childhood memory that always makes you smile.",
-      "Ask the stranger 3 deep questions about their life goals.",
-      "Write a short, creative 4-line poem about friendship right now."
-    ]
-  },
-  flirty: {
-    truths: [
-      "What is your biggest turn-on in a person?",
-      "Do you believe in love at first sight, or should I walk by again?",
-      "What was your most romantic date or encounter?",
-      "What is a secret crush you've had recently?",
-      "Describe your perfect romantic evening."
-    ],
-    dares: [
-      "Describe the stranger's vibe in a highly poetic, flattering way.",
-      "Send a message telling the stranger what you find most attractive about their vibe.",
-      "Try to make the stranger blush using only words.",
-      "Ask the stranger out on a mock virtual date and describe the menu.",
-      "Type a message starting with 'Honestly, you look like a...'"
-    ]
-  },
-  latenight: {
-    truths: [
-      "What is a deep thought that keeps you awake at 3 AM?",
-      "Do you believe in ghosts, aliens, or the paranormal?",
-      "What is your biggest fear about the future?",
-      "Have you ever had a dream that felt so real it changed your day?",
-      "What is your definition of happiness?"
-    ],
-    dares: [
-      "Type your messages in all lowercase with spaces between letters for 2 minutes.",
-      "Tell a ghost story or creepy legend in 3 sentences.",
-      "Confess a weird midnight habit you have.",
-      "Describe a dream you had recently that confused you.",
-      "Describe how you feel right now in a single, honest paragraph."
-    ]
-  }
-};
-
 // Emojis for toxic keyword replacements
 const FUN_EMOJIS = ['🦄', '✨', '🔥', '👑', '💀', '👽', '👾', '🚀', '💖', '🍭'];
 const TOXIC_KEYWORDS = [
@@ -625,43 +541,6 @@ function handleSocket(io) {
       });
     });
 
-    // Truth or Dare events
-    socket.on('trigger-truth-or-dare', async ({ roomId, mode, type }) => {
-      if (!roomId || !mode || !type || !socketUser) return;
-      
-      const bank = TRUTH_DARE_BANK[mode.toLowerCase()] || TRUTH_DARE_BANK.funny;
-      const prompts = type === 'truth' ? bank.truths : bank.dares;
-      const selectedPrompt = prompts[Math.floor(Math.random() * prompts.length)];
-
-      io.to(roomId).emit('truth-or-dare-prompt', {
-        asker: socketUser,
-        type,
-        mode,
-        prompt: selectedPrompt
-      });
-
-      // Reward initiator XP
-      await rewardXp(socketUser, 5, socket);
-      const match = activeMatches.get(roomId);
-      if (match) {
-        match.lastActivity = Date.now();
-      }
-    });
-
-    socket.on('complete-truth-dare', async ({ roomId }) => {
-      if (!socketUser || !roomId) return;
-      // Award answering user high XP
-      await rewardXp(socketUser, 15, socket);
-      const match = activeMatches.get(roomId);
-      if (match) {
-        match.lastActivity = Date.now();
-      }
-      io.to(roomId).emit('truth-dare-completed-notice', {
-        username: socketUser,
-        message: `🎉 ${socketUser} completed their challenge and gained +15 XP! ✨`
-      });
-    });
-
     // Multiplayer room events
     socket.on('join-multiplayer-lobby', ({ username, roomCode }) => {
       if (!roomCode || !username) return;
@@ -1004,7 +883,7 @@ async function tryMatchUsers() {
 
         const common = u1.interests.filter((x) => u2.interests.includes(x));
 
-        const matchMode = u1.randomMode || u2.randomMode ? 'random' : 'smart';
+        const matchMode = 'random';
 
         io.to(u1.socketId).emit('matched', {
           strangerName: u2.username,
@@ -1086,3 +965,4 @@ setInterval(() => {
 }, 2000);
 
 module.exports = { handleSocket };
+
