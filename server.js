@@ -3,6 +3,7 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
+const fs = require('fs');
 const path = require('path');
 const { connectDB, getDbStatus } = require('./backend/config/db');
 const { sendError } = require('./backend/utils/httpResponses');
@@ -72,19 +73,36 @@ app.get('/api/health', (req, res) => {
 
 // Serve frontend assets in production build
 const clientBuildPath = path.join(__dirname, 'client', 'dist');
-app.use(express.static(clientBuildPath));
+const clientIndexPath = path.join(clientBuildPath, 'index.html');
+const hasClientBuild = fs.existsSync(clientIndexPath);
 
-app.use((req, res, next) => {
-  // If request hits API route that doesn't exist, return 404
+if (hasClientBuild) {
+  app.use(express.static(clientBuildPath));
+}
+
+app.get('/', (req, res) => {
+  if (hasClientBuild) {
+    return res.sendFile(clientIndexPath);
+  }
+
+  return res.status(200).json({
+    status: 'online',
+    message: 'Backend API is running. Frontend build is not deployed on this server.'
+  });
+});
+
+app.use((req, res) => {
   if (req.path.startsWith('/api/')) {
     return sendError(res, 404, 'API route not found.');
   }
-  // Otherwise, serve index.html for React routing
-  res.sendFile(path.join(clientBuildPath, 'index.html'), (err) => {
-    if (err) {
-      res.writeHead(200, { 'Content-Type': 'text/plain' });
-      res.end('Vite frontend build is missing. Run npm run build in /client.');
-    }
+
+  if (hasClientBuild) {
+    return res.sendFile(clientIndexPath);
+  }
+
+  return res.status(200).json({
+    status: 'online',
+    message: 'Backend API is running. Frontend build is not deployed on this server.'
   });
 });
 

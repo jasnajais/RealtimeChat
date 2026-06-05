@@ -8,8 +8,11 @@ import MultiplayerRoomPage from './pages/MultiplayerRoomPage';
 import ProfileSettingsPage from './pages/ProfileSettingsPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_URL || 'http://localhost:4000';
-const socket = io(SOCKET_URL, { autoConnect: false });
+const configuredSocketUrl = import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_URL || '';
+const SOCKET_URL = import.meta.env.DEV
+  ? (configuredSocketUrl || 'http://localhost:4000')
+  : (/localhost|127\.0\.0\.1/i.test(configuredSocketUrl) ? '' : configuredSocketUrl);
+const socket = SOCKET_URL ? io(SOCKET_URL, { autoConnect: false }) : null;
 
 function getStoredRole() {
   const storedRole = localStorage.getItem('neon_role');
@@ -37,7 +40,11 @@ function App() {
   const [username, setUsername] = useState(() => localStorage.getItem('neon_username') || '');
   const [role] = useState(() => getStoredRole());
   const [matchDetails, setMatchDetails] = useState(null);
-  const [notice, setNotice] = useState('');
+  const [notice, setNotice] = useState(() => (
+    import.meta.env.PROD && !SOCKET_URL
+      ? 'Backend socket URL is not configured for this deployment.'
+      : ''
+  ));
   const [liveUsers, setLiveUsers] = useState({ count: 0, users: [] });
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => typeof Notification !== 'undefined' && Notification.permission === 'granted');
 
@@ -47,6 +54,10 @@ function App() {
   }, []);
 
   useEffect(() => {
+    if (!socket) {
+      return undefined;
+    }
+
     const handleOnlineCount = ({ count }) => setOnlineCount(count || 0);
     const handleLiveUsers = (payload = {}) => {
       setLiveUsers({
