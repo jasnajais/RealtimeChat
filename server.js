@@ -16,7 +16,7 @@ const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
       "http://127.0.0.1:5173",
       "http://localhost:8080", 
       "http://127.0.0.1:8080",
-      "https://realtime-chat-w7a3.vercel.app",
+      "https://realtime-chat-w7a3.vercel.app/",
     "https://realtimechat-kz1j.onrender.com",
       /\.netlify\.app$/,
       /\.vercel\.app$/,
