@@ -10,7 +10,7 @@ import AdminDashboardPage from './pages/AdminDashboardPage';
 
 const configuredSocketUrl = import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_URL || '';
 const SOCKET_URL = import.meta.env.DEV
-  ? (configuredSocketUrl || 'http://localhost:4000')
+  ? (configuredSocketUrl || 'https://realtimechat-kz1j.onrender.com')
   : (/localhost|127\.0\.0\.1/i.test(configuredSocketUrl) ? '' : configuredSocketUrl);
 const socket = SOCKET_URL ? io(SOCKET_URL, { autoConnect: false }) : null;
 
