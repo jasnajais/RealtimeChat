@@ -542,71 +542,8 @@ function handleSocket(io) {
     });
 
     // Multiplayer room events
-    socket.on('join-multiplayer-lobby', ({ username, roomCode }) => {
-      if (!roomCode || !username) return;
-      
-      const cleanCode = roomCode.trim().toUpperCase();
-      socketUser = username;
-      socket.data.username = username;
-      touchSocketActivity(socket.id, username);
-      socket.join(cleanCode);
+    // Multiplayer events removed: keep only random 1v1 stranger chat
 
-      let room = multiplayerRooms.get(cleanCode);
-      if (!room) {
-        room = {
-          players: [],
-          hostSocketId: socket.id
-        };
-        multiplayerRooms.set(cleanCode, room);
-      }
-
-      // Add player
-      if (!room.players.some(p => p.username === username)) {
-        room.players.push({
-          username,
-          socketId: socket.id,
-          joinedAt: new Date()
-        });
-      }
-
-      console.log(`🎮 [Group] User ${username} joined lobby ${cleanCode}`);
-
-      // Broadcast list to everyone in room
-      io.to(cleanCode).emit('multiplayer-player-list', {
-        players: room.players.map(p => p.username),
-        host: room.players.find(p => p.socketId === room.hostSocketId)?.username || username
-      });
-    });
-
-    socket.on('spin-the-wheel', ({ roomCode }) => {
-      if (!roomCode) return;
-      const room = multiplayerRooms.get(roomCode.trim().toUpperCase());
-      if (!room || room.hostSocketId !== socket.id) return; // Only host spins
-
-      const players = room.players;
-      if (players.length === 0) return;
-
-      const selectedIndex = Math.floor(Math.random() * players.length);
-      const selectedUser = players[selectedIndex];
-
-      // Broadcast spinning result
-      io.to(roomCode.trim().toUpperCase()).emit('wheel-spinning', {
-        selectedIndex,
-        selectedUsername: selectedUser.username,
-        spinDuration: 3000
-      });
-    });
-
-    socket.on('multiplayer-message', ({ roomCode, message }) => {
-      if (!socketUser || !roomCode || typeof message !== 'string' || !message.trim()) return;
-      touchSocketActivity(socket.id, socketUser);
-      const filtered = filterToxicity(message.trim());
-      io.to(roomCode.trim().toUpperCase()).emit('multiplayer-message', {
-        sender: socketUser,
-        message: filtered,
-        timestamp: new Date().toISOString()
-      });
-    });
 
     socket.on('message-reaction', ({ roomId, messageId, emoji } = {}) => {
       const match = activeMatches.get(roomId);

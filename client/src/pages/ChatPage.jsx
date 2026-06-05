@@ -1,35 +1,24 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import {
   Send,
-  Sparkles,
   Flag,
   CheckCircle,
   Flame,
   Ban,
   ShieldAlert,
-  Bell,
   Share2,
   Smile,
   Image,
   Copy,
-  X,
-  Zap
+  X
 } from 'lucide-react';
 import SoundManager from '../components/SoundManager';
 import { generateIcebreaker } from '../components/Icebreakers';
 
 const EMPTY_INTERESTS = [];
-const QUICK_REACTIONS = ['😂', '🔥', '❤️', '👏', '😮'];
+const QUICK_REACTIONS = ['😂', '🔥', '💜', '👏', '😮'];
 
-function ChatPage({
-  socket,
-  username,
-  matchDetails,
-  onSkip,
-  onNotify,
-  onEnableNotifications,
-  notificationsEnabled = false
-}) {
+function ChatPage({ socket, username, matchDetails, onSkip }) {
   const {
     strangerName,
     roomId,
@@ -75,12 +64,6 @@ function ChatPage({
     appendSystemMessage(message);
     setTimeout(() => onSkip(), 1500);
   }, [appendSystemMessage, onSkip]);
-
-  const maybeNotify = useCallback((title, body) => {
-    if (typeof onNotify === 'function') {
-      onNotify(title, body);
-    }
-  }, [onNotify]);
 
   const handleCycleIcebreaker = () => {
     SoundManager.playClick();
@@ -204,12 +187,6 @@ function ChatPage({
     const handleIncomingMessage = (data) => {
       SoundManager.playMsg();
       setMessages((prev) => [...prev, data]);
-      const preview = data?.contentType === 'gif'
-        ? `Shared a GIF${data?.caption ? `: ${data.caption}` : ''}`
-        : data?.message || 'New message';
-      if (data?.sender !== username && (document.hidden || notificationsEnabled)) {
-        maybeNotify('New stranger message', preview);
-      }
     };
 
     const handleReaction = (payload = {}) => {
@@ -243,6 +220,9 @@ function ChatPage({
     socket.on('match-ended', (data) => {
       handleSessionExit(data?.message || data?.reason || 'This chat session ended.');
     });
+    socket.on('truth-dare-completed-notice', (data) => {
+      setMessages((prev) => [...prev, { type: 'system', message: data.message }]);
+    });
     socket.on('message-reaction', handleReaction);
     socket.on('level-up', (data) => {
       SoundManager.playLevelUp();
@@ -269,18 +249,19 @@ function ChatPage({
       socket.off('blocked-by-user');
       socket.off('session-timeout');
       socket.off('match-ended');
+      socket.off('truth-dare-completed-notice');
       socket.off('message-reaction', handleReaction);
       socket.off('level-up');
       if (safetyNoticeTimeoutRef.current) clearTimeout(safetyNoticeTimeoutRef.current);
     };
-  }, [socket, roomId, username, notificationsEnabled, maybeNotify, handleSessionExit, appendSystemMessage]);
+  }, [socket, roomId, username, handleSessionExit, appendSystemMessage]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   return (
-    <div className="flex h-dvh max-h-dvh min-h-0 bg-[#07070c] text-slate-300 overflow-hidden relative">
+    <div className="flex h-screen bg-[#07070c] text-slate-300 overflow-hidden relative">
       {levelUpData && (
         <div className="absolute inset-0 z-50 bg-[#07070c]/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center select-none">
           <div className="max-w-xs space-y-6">
@@ -359,43 +340,31 @@ function ChatPage({
         </div>
       )}
 
-      <div className="flex-1 flex flex-col relative min-h-0 min-w-0">
-        <header className="shrink-0 p-3 sm:p-4 bg-slate-900 border-b border-slate-850 flex flex-col gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="h-9 w-9 shrink-0 rounded-full bg-slate-950 border border-slate-800 flex items-center justify-center text-xs font-bold text-slate-500 font-mono">
+      <div className="flex-1 flex flex-col relative h-full">
+        <header className="p-4 bg-slate-900 border-b border-slate-850 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-full bg-slate-950 border border-slate-800 flex items-center justify-center text-xs font-bold text-slate-500 font-mono">
               👤
             </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="truncate text-sm font-bold text-white font-orbitron tracking-wide">{strangerName}</span>
-                <span className="shrink-0 text-[10px] py-0.5 px-2 bg-[#00f2fe]/10 border border-[#00f2fe]/20 text-[#00f2fe] rounded-full uppercase font-bold font-orbitron tracking-widest">
-                  Random
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold text-white font-orbitron tracking-wide">{strangerName}</span>
+                <span className="text-[10px] py-0.5 px-2 bg-purple-500/10 border border-purple-500/20 text-[#bc34fa] rounded-full uppercase font-bold font-orbitron tracking-widest">
+                  {strangerMood}
                 </span>
               </div>
               {commonInterests.length > 0 ? (
-                <span className="block truncate text-[9px] text-slate-500 uppercase tracking-widest font-mono">Interests: {commonInterests.join(', ')}</span>
+                <span className="text-[9px] text-slate-500 uppercase tracking-widest font-mono">Interests: {commonInterests.join(', ')}</span>
               ) : (
                 <span className="text-[9px] text-slate-500 uppercase tracking-widest font-mono">Random Match</span>
               )}
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-0.5 -mx-1 px-1">
-            <button
-              onClick={() => onEnableNotifications?.()}
-              className={`touch-target shrink-0 p-2.5 rounded-xl border text-xs font-bold font-orbitron uppercase tracking-widest flex items-center gap-1.5 transition-all ${
-                notificationsEnabled
-                  ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20'
-                  : 'bg-slate-950 border-slate-850 text-slate-400 hover:text-white'
-              }`}
-              title="Enable Push Notifications"
-            >
-              <Bell size={15} />
-            </button>
-
+          <div className="flex items-center gap-2">
             <button
               onClick={() => setShowReportModal(true)}
-              className="touch-target shrink-0 p-2.5 bg-slate-950 border border-slate-850 hover:border-slate-800 text-rose-400 hover:text-rose-300 rounded-xl"
+              className="p-2.5 bg-slate-950 border border-slate-850 hover:border-slate-800 text-rose-400 hover:text-rose-300 rounded-xl"
               title="Report User"
             >
               <Flag size={15} />
@@ -403,7 +372,7 @@ function ChatPage({
 
             <button
               onClick={handleBlockUser}
-              className="touch-target shrink-0 p-2.5 bg-slate-950 border border-slate-850 hover:border-slate-800 text-amber-400 hover:text-amber-300 rounded-xl"
+              className="p-2.5 bg-slate-950 border border-slate-850 hover:border-slate-800 text-amber-400 hover:text-amber-300 rounded-xl"
               title="Block User"
             >
               <Ban size={15} />
@@ -411,9 +380,9 @@ function ChatPage({
 
             <button
               onClick={handleNextStranger}
-              className="touch-target shrink-0 px-3 sm:px-4 py-2.5 bg-gradient-to-r from-[#bc34fa] to-[#ff007f] hover:from-[#d546ff] hover:to-[#ff2396] text-white text-xs font-black font-orbitron uppercase tracking-widest rounded-xl shadow-lg active:scale-[0.98] transition-all flex items-center gap-1"
+              className="px-4 py-2.5 bg-gradient-to-r from-[#bc34fa] to-[#ff007f] hover:from-[#d546ff] hover:to-[#ff2396] text-white text-xs font-black font-orbitron uppercase tracking-widest rounded-xl shadow-lg active:scale-[0.98] transition-all flex items-center gap-1"
             >
-              <Zap size={14} className="fill-current" />
+              <Send size={14} className="fill-current" />
               Next
             </button>
           </div>
@@ -428,11 +397,11 @@ function ChatPage({
           </div>
         )}
 
-        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 sm:p-4 md:p-6 space-y-4 bg-slate-950/60 scrollbar-thin">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 bg-slate-950/60 scrollbar-thin">
           {icebreaker && (
             <div className="bg-slate-900/60 border border-purple-500/20 rounded-2xl p-4 max-w-xl mx-auto flex flex-col md:flex-row items-center gap-4 text-center md:text-left relative overflow-hidden my-2 shadow-[0_0_15px_rgba(188,52,250,0.05)]">
               <div className="p-3 bg-purple-500/10 border border-purple-500/20 rounded-xl shrink-0">
-                <Sparkles size={20} className="text-[#bc34fa]" />
+                <Image size={20} className="text-[#bc34fa]" />
               </div>
               <div className="space-y-1 flex-1">
                 <span className="text-[9px] font-bold text-[#bc34fa] uppercase tracking-widest font-orbitron">AI Icebreaker Suggestion</span>
@@ -560,7 +529,7 @@ function ChatPage({
           <div ref={messagesEndRef} />
         </div>
 
-        <div className="shrink-0 p-3 sm:p-4 bg-slate-900 border-t border-slate-850 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div className="p-4 bg-slate-900 border-t border-slate-850">
           <div className="h-5 -mt-3.5 mb-1 px-1 flex items-center text-[10px] text-[#bc34fa]/80 font-mono">
             {isStrangerTyping && (
               <div className="flex items-center gap-1 animate-pulse">

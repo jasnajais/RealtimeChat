@@ -67,7 +67,6 @@ app.get('/api/health', (req, res) => {
     status: 'online',
     database: getDbStatus() ? 'mongodb' : 'in-memory-fallback',
     timestamp: new Date().toISOString()
-  
   });
 });
 
@@ -136,23 +135,46 @@ process.on('SIGINT', () => {
 async function startServer() {
   await connectDB();
 
-  server.on('error', (error) => {
-    if (error.code === 'EADDRINUSE') {
-      console.error(`❌ Port ${PORT} is already in use. Stop the other process or set PORT in .env.`);
-      console.error(`   Windows: netstat -ano | findstr :${PORT}`);
-      console.error(`   Then:    taskkill /PID <pid> /F`);
-    } else {
-      console.error('❌ Server failed to start:', error.message);
-    }
-    process.exit(1);
-  });
+  let currentPort = Number(PORT);
+  const MAX_PORT_ATTEMPTS = 10;
 
-  server.listen(PORT, () => {
-    console.log('🚀 [Server] Socket.IO & Express Starting...');
-    console.log(`   ├─ Port: ${PORT}`);
-    console.log(`   ├─ Database Status: ${getDbStatus() ? 'MongoDB' : 'In-Memory fallback'}`);
-    console.log(`   └─ Listening at http://localhost:${PORT}`);
-  });
+  for (let attempt = 0; attempt < MAX_PORT_ATTEMPTS; attempt++) {
+    try {
+      const started = await new Promise((resolve, reject) => {
+        server.once('error', (error) => {
+          server.removeAllListeners('listening');
+          if (error.code === 'EADDRINUSE') {
+            console.warn(`⚠️ Port ${currentPort} is already in use, trying ${currentPort + 1}...`);
+            currentPort++;
+            resolve(false);
+          } else {
+            reject(error);
+          }
+        });
+
+        server.once('listening', () => {
+          server.removeAllListeners('error');
+          resolve(true);
+        });
+
+        server.listen(currentPort);
+      });
+
+      if (started) {
+        console.log('🚀 [Server] Socket.IO & Express Starting...');
+        console.log(`   ├─ Port: ${currentPort}`);
+        console.log(`   ├─ Database Status: ${getDbStatus() ? 'MongoDB' : 'In-Memory fallback'}`);
+        console.log(`   └─ Listening at http://localhost:${currentPort}`);
+        return;
+      }
+    } catch (err) {
+      console.error('❌ Server failed to start:', err.message);
+      process.exit(1);
+    }
+  }
+
+  console.error(`❌ Could not find an available port after ${MAX_PORT_ATTEMPTS} attempts.`);
+  process.exit(1);
 }
 
 startServer().catch((error) => {

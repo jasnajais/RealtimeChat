@@ -19,11 +19,6 @@ function LandingPage({
     }
   };
 
-  const handleGroupStart = () => {
-    SoundManager.playClick();
-    onViewChange('multiplayer');
-  };
-
   const handleLeaderboard = () => {
     SoundManager.playClick();
     onViewChange('leaderboard');
@@ -156,21 +151,20 @@ function LandingPage({
         <div className="flex flex-col gap-3 w-full max-w-lg">
           <button
             onClick={handleRandomChat}
-            className="w-full px-8 py-4.5 rounded-2xl bg-gradient-to-r from-[#00f2fe] to-[#bc34fa] hover:from-[#33f5ff] hover:to-[#d546ff] text-slate-950 font-bold tracking-widest font-orbitron uppercase text-sm shadow-[0_0_25px_rgba(0,242,254,0.25)] hover:shadow-[0_0_35px_rgba(0,242,254,0.4)] active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2"
+            className="w-full px-8 py-5 rounded-2xl bg-gradient-to-r from-[#00f2fe] to-[#bc34fa] hover:from-[#33f5ff] hover:to-[#d546ff] text-slate-950 font-black tracking-widest font-orbitron uppercase text-sm shadow-[0_0_45px_rgba(0,242,254,0.35)] hover:shadow-[0_0_60px_rgba(0,242,254,0.55)] active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-3 relative overflow-hidden"
           >
-            <Shuffle size={18} />
-            Random Chat
+            <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 hover:opacity-100 transition-opacity" />
+            <Shuffle size={20} className="animate-pulse" />
+            <span className="relative">Random Chat</span>
+            <span className="ml-2 relative inline-flex items-center rounded-full bg-slate-950/20 border border-slate-950/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest">
+              LIVE NOW
+            </span>
           </button>
 
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full">
-            <button
-              onClick={handleGroupStart}
-              className="flex-1 px-6 py-4 rounded-2xl bg-slate-900 hover:bg-slate-850 text-white font-bold tracking-widest font-orbitron uppercase text-xs sm:text-sm border border-slate-800 hover:border-slate-700 hover:shadow-[0_0_25px_rgba(255,255,255,0.05)] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-            >
-              <Users size={18} className="text-[#00f2fe]" />
-              Multiplayer
-            </button>
-          </div>
+
+          {/* Multiplayer removed - keep only random stranger chat */}
+          <div className="h-1" />
+
         </div>
 
         <p className="mt-4 max-w-md text-[11px] text-slate-500 leading-relaxed">
