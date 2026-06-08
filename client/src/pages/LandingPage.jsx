@@ -179,8 +179,11 @@ function LandingPage({
         </div>
       </section>
 
-      <footer className="text-center py-4 text-xs text-slate-500">
-        Created by <span className="font-semibold text-slate-300">Jasna</span>
+      <footer className="max-w-6xl w-full mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 py-4 px-4 text-xs text-slate-500">
+        <p>&copy; 2026 QuickChat. All rights reserved.</p>
+        <p>
+          Created by <span className="font-semibold text-slate-300">Jasna</span>
+        </p>
       </footer>
     </div>
   );
