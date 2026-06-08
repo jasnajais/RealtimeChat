@@ -167,7 +167,7 @@ function ChatPage({ socket, username, matchDetails, onSkip }) {
     try {
       if (navigator.share) {
         await navigator.share({
-          title: 'Funny moment from NeonChat',
+          title: 'Funny moment from QuickChat',
           text
         });
         return;

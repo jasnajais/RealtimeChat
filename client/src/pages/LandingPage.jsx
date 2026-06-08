@@ -1,4 +1,4 @@
-import { Bell, MessageCircle, Sparkles, Award, ShieldAlert, Zap, Shuffle } from 'lucide-react';
+import { Bell, Sparkles, Award, ShieldAlert, Zap, Shuffle } from 'lucide-react';
 import SoundManager from '../components/SoundManager';
 
 function LandingPage({
@@ -6,7 +6,6 @@ function LandingPage({
   onViewChange,
   onRandomChat,
   role = 'user',
-  liveUsers = { count: 0, users: [] },
   onEnableNotifications,
   notificationsEnabled = false
 }) {
@@ -34,11 +33,11 @@ function LandingPage({
       <header className="max-w-6xl w-full mx-auto z-10 flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="p-2 bg-purple-500/10 border border-purple-500/20 rounded-xl shrink-0">
-              <MessageCircle size={22} className="text-[#bc34fa] animate-pulse sm:w-6 sm:h-6" />
+            <div className="p-1.5 bg-purple-500/10 border border-purple-500/20 rounded-xl shrink-0">
+              <img src="/logo.svg" alt="QuickChat logo" className="h-7 w-7 sm:h-8 sm:w-8" />
             </div>
             <span className="text-lg sm:text-xl font-black text-white tracking-wider font-orbitron truncate">
-              NEON<span className="text-[#bc34fa]">CHAT</span>
+              Quick<span className="text-[#00f2fe]">Chat</span>
             </span>
           </div>
         </div>
@@ -180,8 +179,8 @@ function LandingPage({
         </div>
       </section>
 
-      <footer className="text-center py-4 text-[10px] text-slate-600 font-mono tracking-widest uppercase">
-        (c) 2026 NEON CHAT PLATFORM. ALL RIGHTS RESERVED.
+      <footer className="text-center py-4 text-xs text-slate-500">
+        Created by <span className="font-semibold text-slate-300">Jasna</span>
       </footer>
     </div>
   );
