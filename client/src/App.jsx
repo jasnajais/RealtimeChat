@@ -38,7 +38,6 @@ function App() {
   const [role] = useState(() => getStoredRole());
   const [matchDetails, setMatchDetails] = useState(null);
   const [notice, setNotice] = useState('');
-  const [liveUsers, setLiveUsers] = useState({ count: 0, users: [] });
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => typeof Notification !== 'undefined' && Notification.permission === 'granted');
 
   const notifyUser = useCallback((title, body) => {
@@ -52,12 +51,6 @@ function App() {
     }
 
     const handleOnlineCount = ({ count }) => setOnlineCount(count || 0);
-    const handleLiveUsers = (payload = {}) => {
-      setLiveUsers({
-        count: payload.count || 0,
-        users: Array.isArray(payload.users) ? payload.users : []
-      });
-    };
     const handleConnect = () => setNotice('');
     const handleConnectError = () => setNotice('Cannot reach the backend server.');
     const handleForceDisconnect = ({ message }) => {
@@ -67,7 +60,6 @@ function App() {
     };
 
     socket.on('online-count-update', handleOnlineCount);
-    socket.on('live-active-users-update', handleLiveUsers);
     socket.on('connect', handleConnect);
     socket.on('connect_error', handleConnectError);
     socket.on('force-disconnect', handleForceDisconnect);
@@ -75,7 +67,6 @@ function App() {
 
     return () => {
       socket.off('online-count-update', handleOnlineCount);
-      socket.off('live-active-users-update', handleLiveUsers);
       socket.off('connect', handleConnect);
       socket.off('connect_error', handleConnectError);
       socket.off('force-disconnect', handleForceDisconnect);
@@ -178,7 +169,6 @@ function App() {
         onViewChange={handleViewChange}
         onRandomChat={handleRandomChat}
         role={role}
-        liveUsers={liveUsers}
         onEnableNotifications={handleEnableNotifications}
         notificationsEnabled={notificationsEnabled}
       />

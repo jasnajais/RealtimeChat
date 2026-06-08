@@ -1,4 +1,4 @@
-import { Bell, MessageCircle, Users, Sparkles, Award, ShieldAlert, Zap, Shuffle } from 'lucide-react';
+import { Bell, MessageCircle, Sparkles, Award, ShieldAlert, Zap, Shuffle } from 'lucide-react';
 import SoundManager from '../components/SoundManager';
 
 function LandingPage({
@@ -28,9 +28,6 @@ function LandingPage({
     SoundManager.playClick();
     onEnableNotifications?.();
   };
-
-  const liveUserList = Array.isArray(liveUsers.users) ? liveUsers.users : [];
-  const activeCount = liveUsers?.count ?? onlineCount;
 
   return (
     <div className="page-shell bg-[#07070c] relative flex flex-col gap-6 sm:gap-8 select-none">
@@ -84,7 +81,7 @@ function LandingPage({
         </h1>
 
         <p className="text-slate-400 max-w-xl text-sm md:text-base leading-relaxed mb-8">
-          Jump into a live stranger chat in one tap. There are no mood filters, no interest setup, and no extra game modes to manage.
+          Jump into a live stranger chat in one tap.
         </p>
 
         <div className="grid grid-cols-2 gap-3 sm:gap-4 max-w-md w-full mb-8 sm:mb-10">
@@ -108,33 +105,11 @@ function LandingPage({
           </div>
         </div>
 
-        <div className="w-full max-w-2xl mb-10 grid gap-3 md:grid-cols-[1fr_auto]">
-          <div className="rounded-2xl border border-slate-850 bg-slate-950/50 px-4 py-3 text-left">
-            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-slate-500">
-              <Users size={12} className="text-[#00f2fe]" />
-              Live Global Active Users
-            </div>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {liveUserList.length > 0 ? liveUserList.map((name) => (
-                <span
-                  key={name}
-                  className="rounded-full border border-slate-800 bg-slate-900 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-slate-300"
-                >
-                  {name}
-                </span>
-              )) : (
-                <span className="text-xs text-slate-500">No live usernames yet, but the room is awake.</span>
-              )}
-            </div>
-            <p className="mt-2 text-[10px] uppercase tracking-widest text-slate-600">
-              {activeCount} active connections
-            </p>
-          </div>
-
+        <div className="w-full max-w-lg mb-10">
           <button
             type="button"
             onClick={handleEnableNotifications}
-            className={`rounded-2xl border px-4 py-3 text-left transition-all ${
+            className={`w-full rounded-2xl border px-4 py-3 text-left transition-all ${
               notificationsEnabled
                 ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-200'
                 : 'border-slate-850 bg-slate-950/50 text-slate-300 hover:border-[#bc34fa]/40 hover:text-white'
