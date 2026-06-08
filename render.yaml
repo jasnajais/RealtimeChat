@@ -13,5 +13,6 @@ services:
         value: production
       - key: JWT_SECRET
         generateValue: true
+      # Optional: add your exact Vercel URL. *.vercel.app is already allowed by default.
       - key: ALLOWED_ORIGINS
-        sync: false
+        value: https://realtime-chat-w7a3.vercel.app

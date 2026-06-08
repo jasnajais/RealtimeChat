@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
+import { BACKEND_URL } from './config/backend';
 import LandingPage from './pages/LandingPage';
 import MatchPage from './pages/MatchPage';
 import ChatPage from './pages/ChatPage';
@@ -8,11 +9,7 @@ import MultiplayerRoomPage from './pages/MultiplayerRoomPage';
 import ProfileSettingsPage from './pages/ProfileSettingsPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 
-const configuredSocketUrl = import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_URL || '';
-const SOCKET_URL = import.meta.env.DEV
-  ? (configuredSocketUrl || 'https://realtimechat-kz1j.onrender.com')
-  : (/localhost|127\.0\.0\.1/i.test(configuredSocketUrl) ? '' : configuredSocketUrl);
-const socket = SOCKET_URL ? io(SOCKET_URL, { autoConnect: false }) : null;
+const socket = io(BACKEND_URL, { autoConnect: false });
 
 function getStoredRole() {
   const storedRole = localStorage.getItem('neon_role');
@@ -40,11 +37,7 @@ function App() {
   const [username, setUsername] = useState(() => localStorage.getItem('neon_username') || '');
   const [role] = useState(() => getStoredRole());
   const [matchDetails, setMatchDetails] = useState(null);
-  const [notice, setNotice] = useState(() => (
-    import.meta.env.PROD && !SOCKET_URL
-      ? 'Backend socket URL is not configured for this deployment.'
-      : ''
-  ));
+  const [notice, setNotice] = useState('');
   const [liveUsers, setLiveUsers] = useState({ count: 0, users: [] });
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => typeof Notification !== 'undefined' && Notification.permission === 'granted');
 

@@ -9,29 +9,51 @@ const { connectDB, getDbStatus } = require('./backend/config/db');
 const { sendError } = require('./backend/utils/httpResponses');
 
 const PORT = process.env.PORT || 4000;
-const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS 
-  ? process.env.ALLOWED_ORIGINS.split(',') 
-  : [
-      "http://localhost:5173",
-      "http://127.0.0.1:5173",
-      "http://localhost:8080", 
-      "http://127.0.0.1:8080",
-      "https://realtime-chat-w7a3.vercel.app/",
-    "https://realtimechat-kz1j.onrender.com",
-      /\.netlify\.app$/,
-      /\.vercel\.app$/,
-      /\.onrender\.com$/,
-      /\.up\.railway\.app$/
-    ];
+
+const LOCAL_ORIGINS = [
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:8080',
+  'http://127.0.0.1:8080',
+];
+
+const DEPLOYED_ORIGINS = [
+  'https://realtime-chat-w7a3.vercel.app',
+  'https://realtimechat-kz1j.onrender.com',
+];
+
+const ORIGIN_PATTERNS = [
+  /\.vercel\.app$/,
+  /\.netlify\.app$/,
+  /\.onrender\.com$/,
+  /\.up\.railway\.app$/,
+];
+
+const envOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map((origin) => origin.trim()).filter(Boolean)
+  : [];
+
+const ALLOWED_ORIGINS = [
+  ...LOCAL_ORIGINS,
+  ...DEPLOYED_ORIGINS,
+  ...envOrigins,
+  ...ORIGIN_PATTERNS,
+];
+
+function normalizeOrigin(origin) {
+  return typeof origin === 'string' ? origin.replace(/\/$/, '') : origin;
+}
 
 function isOriginAllowed(origin) {
   if (!origin) return true;
 
+  const normalizedOrigin = normalizeOrigin(origin);
+
   return ALLOWED_ORIGINS.some((allowed) => {
     if (allowed instanceof RegExp) {
-      return allowed.test(origin);
+      return allowed.test(normalizedOrigin);
     }
-    return allowed === origin;
+    return normalizeOrigin(allowed) === normalizedOrigin;
   });
 }
 

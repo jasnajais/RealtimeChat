@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, ShieldAlert, Users, Flag, Ban, CheckCircle2, RefreshCw, Search } from 'lucide-react';
 import SoundManager from '../components/SoundManager';
 
-const API_URL = import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_URL || 'http://localhost:4000';
+import { BACKEND_URL as API_URL } from '../config/backend';
 
 function AdminDashboardPage({ username, role, onViewChange }) {
   const [reports, setReports] = useState([]);
